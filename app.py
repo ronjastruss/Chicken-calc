@@ -66,7 +66,9 @@ if staelle:
             del staelle[ausgewaehlter_stall]
             with open(DATA_FILE, "w") as f:
                 json.dump(staelle, f)
-            st.experimental_rerun()  # Seite neu laden, um den Stall aus der Auswahl zu entfernen
+
+            # Aktualisieren der Auswahlbox nach dem Löschen
+            st.experimental_rerun()  # Seite neu laden
 
         # 📅 Ziel-Datum für Berechnung auswählen
         st.markdown("Wähle ein Datum, für das du das Alter berechnen möchtest.")
@@ -79,7 +81,7 @@ if staelle:
             gesamtalter_wochen = startalter_wochen + (tage_seit_einstallung // 7)
             gesamtalter_tage = startalter_tage + (tage_seit_einstallung % 7)
             result_button = f"Alter der Hennen: **{gesamtalter_wochen} Wochen und {gesamtalter_tage} Tage**"
-            st.markdown(f"<button>{result_button}</button>", unsafe_allow_html=True)
+            st.markdown(f"<button style='background-color: green; color: white; padding: 10px 20px; font-size: 14px; border-radius: 5px;'>{result_button}</button>", unsafe_allow_html=True)
 
         st.markdown("<hr>", unsafe_allow_html=True)  # Trennlinie zwischen den beiden Berechnungen
 
@@ -90,6 +92,6 @@ if staelle:
             # Berechnung des Datums, an dem die Hennen X Wochen alt sind
             tage_fuer_wochen = wochen_eingabe * 7
             neues_datum = saved_date + timedelta(days=tage_fuer_wochen)
-            st.success(f"Am **{neues_datum.strftime('%d.%m.%Y')}** sind die Hennen **{wochen_eingabe} Wochen** alt.")
+            st.markdown(f"<button style='background-color: green; color: white; padding: 10px 20px; font-size: 14px; border-radius: 5px;'>Am **{neues_datum.strftime('%d.%m.%Y')}** sind die Hennen **{wochen_eingabe} Wochen** alt.</button>", unsafe_allow_html=True)
 else:
     st.info("Noch keine Ställe gespeichert. Lege im Seitenmenü einen neuen Stall an.")
