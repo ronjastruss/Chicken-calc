@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import date, datetime
+from datetime import date, datetime, timedelta  # Import für timedelta hinzufügen
 import json
 import os
 
@@ -34,46 +34,6 @@ if st.sidebar.button("Stall speichern"):
         }
         with open(DATA_FILE, "w") as f:
             json.dump(staelle, f)
-        st.sidebar.success(f"Stall '{neuer_stall}' gespeichert.")
-        
-        # Felder nach dem Speichern leeren, damit der Benutzer einen neuen Stall anlegen kann
-        neuer_stall = ""
-        einstalldatum = None
-        startalter_wochen = 0
-        startalter_tage = 0
-    else:
-        st.sidebar.error("Bitte alle Felder ausfüllen.")
+        st.sidebar
 
-# 📋 Stall auswählen
-if staelle:
-    st.subheader("📍 Stall auswählen")
-    ausgewaehlter_stall = st.selectbox("Stall", list(staelle.keys()))
-
-    if ausgewaehlter_stall:
-        stall_daten = staelle[ausgewaehlter_stall]
-        saved_date = datetime.strptime(stall_daten["einstalldatum"], "%Y-%m-%d").date()
-        startalter_wochen = stall_daten["startalter_wochen"]
-        startalter_tage = stall_daten["startalter_tage"]
-
-        # 📅 Ziel-Datum für Berechnung auswählen
-        st.markdown("Wähle ein Datum, für das du das Alter berechnen möchtest.")
-        zieldatum = st.date_input("Datum", value=date.today())
-
-        # Button 1: Alter zum Datum X berechnen
-        if st.button("Alter zum Datum X berechnen"):
-            tage_seit_einstallung = (zieldatum - saved_date).days
-            gesamtalter_wochen = startalter_wochen + (tage_seit_einstallung // 7)
-            gesamtalter_tage = startalter_tage + (tage_seit_einstallung % 7)
-            result_button = f"Alter der Hennen: **{gesamtalter_wochen} Wochen und {gesamtalter_tage} Tage**"
-            st.markdown(f"<button>{result_button}</button>", unsafe_allow_html=True)
-
-        # Button 2: Berechne, in welcher Woche die Hennen X Wochen alt sind
-        wochen_eingabe = st.number_input("Woche, die du berechnen möchtest (z.B. 29)", min_value=1, value=29)
-        if st.button("In welcher Woche sind die Hennen X Wochen alt?"):
-            # Berechnung des Datums, an dem die Hennen X Wochen alt sind
-            tage_fuer_wochen = wochen_eingabe * 7
-            neues_datum = saved_date + timedelta(days=tage_fuer_wochen)
-            st.success(f"Am **{neues_datum.strftime('%d.%m.%Y')}** sind die Hennen **{wochen_eingabe} Wochen** alt.")
-else:
-    st.info("Noch keine Ställe gespeichert. Lege im Seitenmenü einen neuen Stall an.")
 
