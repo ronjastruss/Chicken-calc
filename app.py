@@ -1,20 +1,58 @@
-Last login: Wed Apr 30 19:33:30 on ttys000
-ronjastruss@AirvonRonja447 ~ % >....                                            
+import streamlit as st
+from datetime import date, datetime
+import json
+import os
 
-    ausgewaehlter_stall = st.selectbox("Wähle einen Stall", list(st.session_state["staelle"].keys()))
-    selected_datum = st.date_input("Für welches Datum möchtest du das Alter berechnen?", datetime.today())
+st.set_page_config(page_title="Chicken Calculator 🐔", page_icon="🐔")
 
-    if st.button("Alter berechnen"):
-        stall = st.session_state["staelle"][ausgewaehlter_stall]
-        tage_seit_einstallung = (selected_datum - stall["einstalldatum"]).days
-        aktuelles_alter = stall["alter_start"] + tage_seit_einstallung
+st.title("🐔 Chicken Calculator")
+st.markdown("Berechne das aktuelle Alter deiner Legehennen – für beliebig viele Ställe.")
 
-        if aktuelles_alter < 0:
-            st.error("⚠<fe0f> Das gewählte Datum liegt vor dem Einstall-Datum!") 
-        else:
-            st.success(f"<0001f7e2> Alter der Hennen am {selected_datum.strftime('%d.%m.%Y')} im Stall '{ausgewaehlter_stall}': **{aktuelles_alter} Tage**")
+# Lokale JSON-Datei zum Speichern der Stall-Daten
+DATA_FILE = "staelle.json"
 
+# 📂 Ställe laden oder initialisieren
+if os.path.exists(DATA_FILE):
+    with open(DATA_FILE, "r") as f:
+        staelle = json.load(f)
 else:
-    st.info("🔸 Aktuell sind keine Ställe gespeichert. Lege zuerst einen neuen Stall an.")
+    staelle = {}
 
+# 🚧 Neuen Stall hinzufügen
+st.sidebar.subheader("➕ Neuen Stall anlegen")
+neuer_stall = st.sidebar.text_input("Name des Stalls")
+einstalldatum = st.sidebar.date_input("Einstalldatum")
+startalter = st.sidebar.number_input("Alter bei Einstallen (in Wochen)", min_value=0, value=0)
 
+if st.sidebar.button("Stall speichern"):
+    if neuer_stall and str(einstalldatum):
+        staelle[neuer_stall] = {
+            "einstalldatum": str(einstalldatum),
+            "startalter": startalter
+        }
+        with open(DATA_FILE, "w") as f:
+            json.dump(staelle, f)
+        st.sidebar.success(f"Stall '{neuer_stall}' gespeichert.")
+    else:
+        st.sidebar.error("Bitte alle Felder ausfüllen.")
+
+# 📋 Stall auswählen
+if staelle:
+    st.subheader("📍 Stall auswählen")
+    ausgewaehlter_stall = st.selectbox("Stall", list(staelle.keys()))
+
+    if ausgewaehlter_stall:
+        stall_daten = staelle[ausgewaehlter_stall]
+        saved_date = datetime.strptime(stall_daten["einstalldatum"], "%Y-%m-%d").date()
+        startalter = stall_daten["startalter"]
+
+        # 📅 Ziel-Datum für Berechnung auswählen
+        st.markdown("Wähle ein Datum, für das du das Alter berechnen möchtest.")
+        zieldatum = st.date_input("Datum", value=date.today())
+
+        if st.button("Alter berechnen"):
+            tage_seit_einstallung = (zieldatum - saved_date).days
+            gesamtalter = startalter + tage_seit_einstallung // 7
+            st.success(f"Am {zieldatum.strftime('%d.%m.%Y')} sind die Hennen im Stall '{ausgewaehlter_stall}' **{gesamtalter} Wochen alt**.")
+else:
+    st.info("Noch keine Ställe gespeichert. Lege im Seitenmenü einen neuen Stall an.")
