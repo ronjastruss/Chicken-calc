@@ -20,20 +20,26 @@ else:
 
 # 🚧 Neuen Stall hinzufügen
 st.sidebar.subheader("➕ Neuen Stall anlegen")
-neuer_stall = st.sidebar.text_input("Name des Stalls")
+stall_name = st.sidebar.text_input("Name des Stalls", "Hühnerstall Hof 1")  # Standardwert für Stallname
 einstalldatum = st.sidebar.date_input("Einstalldatum")
 startalter_wochen = st.sidebar.number_input("Alter bei Einstallen (in Wochen)", min_value=0, value=0)
 startalter_tage = st.sidebar.number_input("Alter bei Einstallen (in Tagen)", min_value=0, value=0)
 
 if st.sidebar.button("Stall speichern"):
-    if neuer_stall and str(einstalldatum):
-        staelle[neuer_stall] = {
+    if stall_name and str(einstalldatum):
+        staelle[stall_name] = {
             "einstalldatum": str(einstalldatum),
             "startalter_wochen": startalter_wochen,
             "startalter_tage": startalter_tage
         }
         with open(DATA_FILE, "w") as f:
             json.dump(staelle, f)
-        st.sidebar
-
-
+        st.sidebar.success(f"Stall '{stall_name}' gespeichert.")
+        
+        # Felder nach dem Speichern leeren, damit der Benutzer einen neuen Stall anlegen kann
+        stall_name = "Hühnerstall Hof 1"
+        einstalldatum = None
+        startalter_wochen = 0
+        startalter_tage = 0
+    else:
+        st.sidebar.error("Bitte alle
