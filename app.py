@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import date, datetime, timedelta  # Import für timedelta hinzufügen
+from datetime import date, datetime, timedelta
 import json
 import os
 
@@ -20,7 +20,7 @@ else:
 
 # 🚧 Neuen Stall hinzufügen
 st.sidebar.subheader("➕ Neuen Stall anlegen")
-stall_name = st.sidebar.text_input("Name des Stalls", "Hühnerstall Hof 1")  # Standardwert für Stallname
+stall_name = st.sidebar.text_input("Name des Stalls", "Hühnerstall 1")  # Standardwert für Stallname
 einstalldatum = st.sidebar.date_input("Einstalldatum")
 startalter_wochen = st.sidebar.number_input("Alter bei Einstallen (in Wochen)", min_value=0, value=0)
 startalter_tage = st.sidebar.number_input("Alter bei Einstallen (in Tagen)", min_value=0, value=0)
@@ -37,12 +37,12 @@ if st.sidebar.button("Stall speichern"):
         st.sidebar.success(f"Stall '{stall_name}' gespeichert.")
         
         # Felder nach dem Speichern leeren, damit der Benutzer einen neuen Stall anlegen kann
-        stall_name = "Hühnerstall Hof 1"
+        stall_name = "Hühnerstall 1"
         einstalldatum = None
         startalter_wochen = 0
         startalter_tage = 0
     else:
-        st.sidebar.error("Bitte alle Felder ausfüllen.")  # String korrekt abgeschlossen
+        st.sidebar.error("Bitte alle Felder ausfüllen.")
 
 # 📋 Stall auswählen
 if staelle:
@@ -56,16 +56,16 @@ if staelle:
         startalter_tage = stall_daten["startalter_tage"]
 
         # 📝 Stall-Daten anzeigen
-        st.markdown(f"**Daten für Stall '{ausgewaehlter_stall}':**")
-        st.write(f"Einstalldatum: {saved_date.strftime('%d.%m.%Y')}")
-        st.write(f"Alter bei Einstallen: {startalter_wochen} Wochen und {startalter_tage} Tage")
+        st.markdown(f"### **Daten für Stall '{ausgewaehlter_stall}':**")
+        st.write(f"<p style='color: lightgrey; font-size: 12px;'>Einstalldatum: {saved_date.strftime('%d.%m.%Y')}</p>", unsafe_allow_html=True)
+        st.write(f"<p style='color: lightgrey; font-size: 12px;'>Alter bei Einstallen: {startalter_wochen} Wochen und {startalter_tage} Tage</p>", unsafe_allow_html=True)
 
         # 🗑️ Möglichkeit, Stall zu löschen
-        if st.button(f"Stall '{ausgewaehlter_stall}' löschen"):
+        delete_button = st.button(f"Stall '{ausgewaehlter_stall}' löschen", key="delete_button", use_container_width=True)
+        if delete_button:
             del staelle[ausgewaehlter_stall]
             with open(DATA_FILE, "w") as f:
                 json.dump(staelle, f)
-            st.sidebar.success(f"Stall '{ausgewaehlter_stall}' wurde gelöscht.")
             st.experimental_rerun()  # Seite neu laden, um den Stall aus der Auswahl zu entfernen
 
         # 📅 Ziel-Datum für Berechnung auswählen
