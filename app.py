@@ -1,97 +1,92 @@
 import streamlit as st
-from datetime import date, datetime, timedelta
-import json
-import os
+from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Chicken Calculator 🐔", page_icon="🐔")
+st.set_page_config(page_title="Hennen-Alter Rechner", layout="centered")
 
 st.title("🐔 Chicken Calculator")
-st.markdown("Berechne das aktuelle Alter deiner Legehennen – für beliebig viele Ställe.")
 
-# Lokale JSON-Datei zum Speichern der Stall-Daten
-DATA_FILE = "staelle.json"
+# Session-State initialisieren
+if "staelle" not in st.session_state:
+    st.session_state.staelle = {}
+if "aktueller_stall" not in st.session_state:
+    st.session_state.aktueller_stall = ""
 
-# 📂 Ställe laden oder initialisieren
-if os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "r") as f:
-        staelle = json.load(f)
-else:
-    staelle = {}
-
-# 🚧 Neuen Stall hinzufügen
-st.sidebar.subheader("➕ Neuen Stall anlegen")
-stall_name = st.sidebar.text_input("Name des Stalls", "Hühnerstall 1")  # Standardwert für Stallname
+# STALL ANLEGEN
+st.sidebar.header("🔧 Neuen Stall anlegen")
+stall_name = st.sidebar.text_input("Stallname", placeholder="z.B. Hühnerstall 1")
 einstalldatum = st.sidebar.date_input("Einstalldatum")
-startalter_wochen = st.sidebar.number_input("Alter bei Einstallen (in Wochen)", min_value=0, value=0)
-startalter_tage = st.sidebar.number_input("Alter bei Einstallen (in Tagen)", min_value=0, value=0)
+einstall_alter_wochen = st.sidebar.number_input("Alter bei Einstallen (Wochen)", min_value=0, step=1)
+einstall_alter_tage = st.sidebar.number_input("Alter bei Einstallen (Tage)", min_value=0, max_value=6, step=1)
 
 if st.sidebar.button("Stall speichern"):
-    if stall_name and str(einstalldatum):
-        staelle[stall_name] = {
-            "einstalldatum": str(einstalldatum),
-            "startalter_wochen": startalter_wochen,
-            "startalter_tage": startalter_tage
+    if stall_name and einstalldatum:
+        st.session_state.staelle[stall_name] = {
+            "einstalldatum": einstalldatum,
+            "alter_wochen": einstall_alter_wochen,
+            "alter_tage": einstall_alter_tage
         }
-        with open(DATA_FILE, "w") as f:
-            json.dump(staelle, f)
         st.sidebar.success(f"Stall '{stall_name}' gespeichert.")
-        
-        # Felder nach dem Speichern leeren, damit der Benutzer einen neuen Stall anlegen kann
-        stall_name = "Hühnerstall 1"
-        einstalldatum = None
-        startalter_wochen = 0
-        startalter_tage = 0
+        st.session_state.aktueller_stall = stall_name
+        # Eingaben zurücksetzen
+        st.experimental_set_query_params()  # nur zur Sicherheit
     else:
         st.sidebar.error("Bitte alle Felder ausfüllen.")
 
-# 📋 Stall auswählen
-if staelle:
-    st.subheader("📍 Stall auswählen")
-    ausgewaehlter_stall = st.selectbox("Stall", list(staelle.keys()))
+# STALL AUSWÄHLEN UND VERWALTEN
+st.header("📋 Stall auswählen")
+if st.session_state.staelle:
+    auswahl = st.selectbox("Wähle einen Stall", list(st.session_state.staelle.keys()))
+    if auswahl:
+        st.session_state.aktueller_stall = auswahl
 
-    if ausgewaehlter_stall:
-        stall_daten = staelle[ausgewaehlter_stall]
-        saved_date = datetime.strptime(stall_daten["einstalldatum"], "%Y-%m-%d").date()
-        startalter_wochen = stall_daten["startalter_wochen"]
-        startalter_tage = stall_daten["startalter_tage"]
+        stall = st.session_state.staelle[auswahl]
 
-        # 📝 Stall-Daten anzeigen
-        st.markdown(f"### **Daten für Stall '{ausgewaehlter_stall}':**")
-        st.write(f"<p style='color: lightgrey; font-size: 12px;'>Einstalldatum: {saved_date.strftime('%d.%m.%Y')}</p>", unsafe_allow_html=True)
-        st.write(f"<p style='color: lightgrey; font-size: 12px;'>Alter bei Einstallen: {startalter_wochen} Wochen und {startalter_tage} Tage</p>", unsafe_allow_html=True)
+        # Stall-Infos anzeigen (klein, hellgrau)
+        with st.expander("📄 Stall-Details", expanded=True):
+            st.markdown(
+                f"<small style='color: gray;'>Einstalldatum: {stall['einstalldatum']}<br>"
+                f"Alter bei Einstallen: {stall['alter_wochen']} Wochen, {stall['alter_tage']} Tage</small>",
+                unsafe_allow_html=True
+            )
 
-        # 🗑️ Möglichkeit, Stall zu löschen
-        delete_button = st.button(f"Stall '{ausgewaehlter_stall}' löschen", key="delete_button", use_container_width=True)
-        if delete_button:
-            del staelle[ausgewaehlter_stall]
-            with open(DATA_FILE, "w") as f:
-                json.dump(staelle, f)
+        # Stall löschen
+        col1, col2 = st.columns([0.8, 0.2])
+        with col2:
+            if st.button("🗑️ Löschen", key="loeschen", help="Stall löschen"):
+                del st.session_state.staelle[auswahl]
+                st.session_state.aktueller_stall = ""
+                st.experimental_set_query_params()
+                st.experimental_rerun()
 
-            # Aktualisieren der Auswahlbox nach dem Löschen
-            st.experimental_rerun()  # Seite neu laden
+        st.markdown("---")
 
-        # 📅 Ziel-Datum für Berechnung auswählen
-        st.markdown("Wähle ein Datum, für das du das Alter berechnen möchtest.")
-        zieldatum = st.date_input("Datum", value=date.today())
+        # FUNKTION 1 – Alter zu Datum X
+        st.subheader("📆 1. Alter der Hennen zu einem bestimmten Datum")
+        datum_x = st.date_input("Wähle das Datum")
+        if st.button("Alter berechnen"):
+            saved_date = stall['einstalldatum']
+            saved_wochen = stall['alter_wochen']
+            saved_tage = stall['alter_tage']
 
-        # --- Erste Berechnung: Alter zum Datum X ---
-        st.subheader("Berechnung 1: Alter zum Datum X")
-        if st.button("Alter zum Datum X berechnen"):
-            tage_seit_einstallung = (zieldatum - saved_date).days
-            gesamtalter_wochen = startalter_wochen + (tage_seit_einstallung // 7)
-            gesamtalter_tage = startalter_tage + (tage_seit_einstallung % 7)
-            result_button = f"Alter der Hennen: **{gesamtalter_wochen} Wochen und {gesamtalter_tage} Tage**"
-            st.markdown(f"<button style='background-color: green; color: white; padding: 10px 20px; font-size: 14px; border-radius: 5px;'>{result_button}</button>", unsafe_allow_html=True)
+            gesamt_tage = (datum_x - saved_date).days + (saved_wochen * 7 + saved_tage)
+            wochen = gesamt_tage // 7
+            tage = gesamt_tage % 7
+            st.success(f"Die Hennen sind am {datum_x.strftime('%d.%m.%Y')} genau {wochen} Wochen und {tage} Tage alt.")
 
-        st.markdown("<hr>", unsafe_allow_html=True)  # Trennlinie zwischen den beiden Berechnungen
+        st.markdown("---")
 
-        # --- Zweite Berechnung: Woche zu einem bestimmten Alter ---
-        st.subheader("Berechnung 2: In welcher Woche sind die Hennen X Wochen alt?")
-        wochen_eingabe = st.number_input("Woche, die du berechnen möchtest (z.B. 29)", min_value=1, value=29)
-        if st.button("In welcher Woche sind die Hennen X Wochen alt?"):
-            # Berechnung des Datums, an dem die Hennen X Wochen alt sind
-            tage_fuer_wochen = wochen_eingabe * 7
+        # FUNKTION 2 – Datum bei gewünschtem Alter
+        st.subheader("⏳ 2. Datum berechnen für gewünschtes Alter")
+        ziel_wochen = st.number_input("Zielalter (Wochen)", min_value=0, step=1)
+        ziel_tage = st.number_input("Zielalter (Tage)", min_value=0, max_value=6, step=1)
+        if st.button("Datum berechnen"):
+            saved_date = stall['einstalldatum']
+            saved_wochen = stall['alter_wochen']
+            saved_tage = stall['alter_tage']
+
+            tage_fuer_wochen = (ziel_wochen * 7 + ziel_tage) - (saved_wochen * 7 + saved_tage)
             neues_datum = saved_date + timedelta(days=tage_fuer_wochen)
-            st.markdown(f"<button style='background-color: green; color: white; padding: 10px 20px; font-size: 14px; border-radius: 5px;'>Am **{neues_datum.strftime('%d.%m.%Y')}** sind die Hennen **{wochen_eingabe} Wochen** alt.</button>", unsafe_allow_html=True)
+
+            st.success(f"Die Hennen sind am {neues_datum.strftime('%d.%m.%Y')} genau {ziel_wochen} Wochen und {ziel_tage} Tage alt.")
 else:
-    st.info("Noch keine Ställe gespeichert. Lege im Seitenmenü einen neuen Stall an.")
+    st.info("Noch kein Stall gespeichert.")
