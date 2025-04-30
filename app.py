@@ -42,4 +42,54 @@ if st.sidebar.button("Stall speichern"):
         startalter_wochen = 0
         startalter_tage = 0
     else:
-        st.sidebar.error("Bitte alle
+        st.sidebar.error("Bitte alle Felder ausfüllen.")  # String korrekt abgeschlossen
+
+# 📋 Stall auswählen
+if staelle:
+    st.subheader("📍 Stall auswählen")
+    ausgewaehlter_stall = st.selectbox("Stall", list(staelle.keys()))
+
+    if ausgewaehlter_stall:
+        stall_daten = staelle[ausgewaehlter_stall]
+        saved_date = datetime.strptime(stall_daten["einstalldatum"], "%Y-%m-%d").date()
+        startalter_wochen = stall_daten["startalter_wochen"]
+        startalter_tage = stall_daten["startalter_tage"]
+
+        # 📝 Stall-Daten anzeigen
+        st.markdown(f"**Daten für Stall '{ausgewaehlter_stall}':**")
+        st.write(f"Einstalldatum: {saved_date.strftime('%d.%m.%Y')}")
+        st.write(f"Alter bei Einstallen: {startalter_wochen} Wochen und {startalter_tage} Tage")
+
+        # 🗑️ Möglichkeit, Stall zu löschen
+        if st.button(f"Stall '{ausgewaehlter_stall}' löschen"):
+            del staelle[ausgewaehlter_stall]
+            with open(DATA_FILE, "w") as f:
+                json.dump(staelle, f)
+            st.sidebar.success(f"Stall '{ausgewaehlter_stall}' wurde gelöscht.")
+            st.experimental_rerun()  # Seite neu laden, um den Stall aus der Auswahl zu entfernen
+
+        # 📅 Ziel-Datum für Berechnung auswählen
+        st.markdown("Wähle ein Datum, für das du das Alter berechnen möchtest.")
+        zieldatum = st.date_input("Datum", value=date.today())
+
+        # --- Erste Berechnung: Alter zum Datum X ---
+        st.subheader("Berechnung 1: Alter zum Datum X")
+        if st.button("Alter zum Datum X berechnen"):
+            tage_seit_einstallung = (zieldatum - saved_date).days
+            gesamtalter_wochen = startalter_wochen + (tage_seit_einstallung // 7)
+            gesamtalter_tage = startalter_tage + (tage_seit_einstallung % 7)
+            result_button = f"Alter der Hennen: **{gesamtalter_wochen} Wochen und {gesamtalter_tage} Tage**"
+            st.markdown(f"<button>{result_button}</button>", unsafe_allow_html=True)
+
+        st.markdown("<hr>", unsafe_allow_html=True)  # Trennlinie zwischen den beiden Berechnungen
+
+        # --- Zweite Berechnung: Woche zu einem bestimmten Alter ---
+        st.subheader("Berechnung 2: In welcher Woche sind die Hennen X Wochen alt?")
+        wochen_eingabe = st.number_input("Woche, die du berechnen möchtest (z.B. 29)", min_value=1, value=29)
+        if st.button("In welcher Woche sind die Hennen X Wochen alt?"):
+            # Berechnung des Datums, an dem die Hennen X Wochen alt sind
+            tage_fuer_wochen = wochen_eingabe * 7
+            neues_datum = saved_date + timedelta(days=tage_fuer_wochen)
+            st.success(f"Am **{neues_datum.strftime('%d.%m.%Y')}** sind die Hennen **{wochen_eingabe} Wochen** alt.")
+else:
+    st.info("Noch keine Ställe gespeichert. Lege im Seitenmenü einen neuen Stall an.")
