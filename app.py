@@ -3,9 +3,6 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Chicken Calculator", layout="centered")
 
-# App-Titel
-st.title("🐔 Chicken Calculator")
-
 # Session State initialisieren
 if "staelle" not in st.session_state:
     st.session_state["staelle"] = {}
@@ -14,10 +11,13 @@ if "aktueller_stall" not in st.session_state:
 
 # 🐣 Sidebar: Stall erstellen
 st.sidebar.header("🔧 Neuen Stall anlegen")
-stall_name = st.sidebar.text_input("Stallname", placeholder="z. B. Hühnerstall 1")
+if "stall_name" not in st.session_state:
+    st.session_state["stall_name"] = ""
+stall_name = st.sidebar.text_input("Stallname", value=st.session_state["stall_name"], placeholder="z. B. Hühnerstall 1")
 einstall_datum = st.sidebar.date_input("Einstall-Datum")
 einstall_wochen = st.sidebar.number_input("Alter bei Einstallung (Wochen)", min_value=0, step=1)
 einstall_tage = st.sidebar.number_input("Zusätzliche Tage", min_value=0, max_value=6, step=1)
+
 if st.sidebar.button("💾 Stall speichern"):
     if stall_name and einstall_datum:
         st.session_state["staelle"][stall_name] = {
@@ -26,9 +26,8 @@ if st.sidebar.button("💾 Stall speichern"):
             "tage": int(einstall_tage)
         }
         st.session_state["aktueller_stall"] = stall_name
-        # Eingaben zurücksetzen
-        st.query_params.clear()
-        st.experimental_rerun()
+        # Felder zurücksetzen (ohne rerun)
+        st.session_state["stall_name"] = ""
     else:
         st.sidebar.error("Bitte alle Felder ausfüllen!")
 
@@ -38,12 +37,12 @@ if st.session_state["staelle"]:
     auswahl = st.sidebar.selectbox("Wähle einen Stall", list(st.session_state["staelle"].keys()))
     st.session_state["aktueller_stall"] = auswahl
 
-    # Stall löschen (rechts neben Auswahl)
+    # Stall löschen
     if st.sidebar.button("❌ Stall löschen"):
         del st.session_state["staelle"][auswahl]
         st.session_state["aktueller_stall"] = None
-        st.query_params.clear()
-        st.experimental_rerun()
+        st.experimental_set_query_params()  # Optional zum Aufräumen
+        st.stop()
 
 # 📋 Hauptinhalt
 if st.session_state["aktueller_stall"]:
