@@ -1,26 +1,26 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import date, timedelta, datetime
 
 st.set_page_config(page_title="Chicken Calculator", layout="centered")
 
-# Titel
 st.title("🐔 Chicken Calculator")
 
-# Initialisierung
+# Session State initialisieren
 if "staelle" not in st.session_state:
     st.session_state["staelle"] = {}
+
 if "aktueller_stall" not in st.session_state:
     st.session_state["aktueller_stall"] = None
-if "stall_name_input" not in st.session_state:
-    st.session_state["stall_name_input"] = ""
 
-# Seitenleiste: Stall anlegen
-st.sidebar.header("➕ Stall anlegen")
+# Seitenleiste für Stallverwaltung
+st.sidebar.header("📦 Stall verwalten")
+
 stall_name = st.sidebar.text_input("Name des Stalls", placeholder="z. B. Hühnerstall 1", key="stall_name_input")
 einstall_datum = st.sidebar.date_input("Einstall-Datum")
-einstall_wochen = st.sidebar.number_input("Alter bei Einstallung (Wochen)", min_value=0, max_value=100, value=0)
-einstall_tage = st.sidebar.number_input("Zusätzliche Tage", min_value=0, max_value=6, value=0)
+einstall_wochen = st.sidebar.number_input("Alter bei Einstallung (Wochen)", min_value=0, step=1, value=0)
+einstall_tage = st.sidebar.number_input("Alter bei Einstallung (Tage)", min_value=0, max_value=6, step=1, value=0)
 
+# Stall speichern
 if st.sidebar.button("💾 Stall speichern"):
     if stall_name and einstall_datum is not None:
         st.session_state["staelle"][stall_name] = {
@@ -29,51 +29,65 @@ if st.sidebar.button("💾 Stall speichern"):
             "tage": int(einstall_tage)
         }
         st.session_state["aktueller_stall"] = stall_name
-        st.session_state["stall_name_input"] = ""
         st.rerun()
     else:
         st.sidebar.warning("⚠️ Bitte alle Felder ausfüllen!")
 
-# Bestehende Ställe anzeigen
+# Auswahl bestehender Ställe
 if st.session_state["staelle"]:
-    st.subheader("🐔 Stall auswählen")
-    stall_optionen = list(st.session_state["staelle"].keys())
-    ausgewaehlter_stall = st.selectbox("Wähle einen Stall", stall_optionen, index=stall_optionen.index(st.session_state["aktueller_stall"]) if st.session_state["aktueller_stall"] else 0)
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📂 Bestehende Ställe")
+    stall_liste = list(st.session_state["staelle"].keys())
+    aktueller_stall = st.sidebar.selectbox("Stall auswählen", stall_liste, key="stall_selectbox")
+    st.session_state["aktueller_stall"] = aktueller_stall
 
     # Stall löschen
-    col1, col2 = st.columns([5,1])
-    with col1:
-        st.markdown(f"🗂️ <small style='color:gray'>Daten zu {ausgewaehlter_stall}:</small>", unsafe_allow_html=True)
-        stall_info = st.session_state["staelle"][ausgewaehlter_stall]
-        st.markdown(f"<small style='color:gray'>Einstall-Datum: {stall_info['datum'].strftime('%d.%m.%Y')} – Alter: {stall_info['wochen']} Wochen und {stall_info['tage']} Tage</small>", unsafe_allow_html=True)
-    with col2:
-        if st.button("🗑️", help="Stall löschen", key="loeschen_button"):
-            del st.session_state["staelle"][ausgewaehlter_stall]
-            st.session_state["aktueller_stall"] = None
-            st.rerun()
+    if st.sidebar.button("❌ Stall löschen"):
+        del st.session_state["staelle"][aktueller_stall]
+        st.session_state["aktueller_stall"] = None
+        st.rerun()
 
-    # Weiter mit Berechnungen
+# Wenn ein Stall ausgewählt ist
+if st.session_state["aktueller_stall"]:
+    stall = st.session_state["staelle"][st.session_state["aktueller_stall"]]
+    st.subheader(f"📋 Stall: {st.session_state['aktueller_stall']}")
+
+    st.caption(f"Einstall-Datum: {stall['datum'].strftime('%d.%m.%Y')} | Alter bei Einstallung: {stall['wochen']} Wochen, {stall['tage']} Tage")
+
     st.markdown("---")
-    st.subheader("📆 Alter zu bestimmtem Datum")
-    ziel_datum = st.date_input("Wähle ein Datum", key="datum_input")
-    if st.button("📏 Alter berechnen"):
-        stall_daten = st.session_state["staelle"][ausgewaehlter_stall]
-        startdatum = stall_daten["datum"] - timedelta(weeks=stall_daten["wochen"], days=stall_daten["tage"])
-        differenz = (ziel_datum - startdatum).days
-        wochen = differenz // 7
-        tage = differenz % 7
-        st.success(f"Am {ziel_datum.strftime('%d.%m.%Y')} sind die Hennen **{wochen} Wochen und {tage} Tage** alt.")
+    st.subheader("📅 Alter der Hennen zu bestimmtem Datum")
+    ziel_datum = st.date_input("Datum wählen", key="datum_fuer_alter")
 
-    st.markdown("")
+    saved_date = stall["datum"]
+    saved_weeks = stall["wochen"]
+    saved_days = stall["tage"]
 
-    st.subheader("📅 Datum zu gewünschtem Alter")
-    ziel_alter_wochen = st.number_input("Alter in Wochen", min_value=0, max_value=100, value=20, key="ziel_wochen")
-    ziel_datum2 = None
+    if ziel_datum >= saved_date:
+        diff = (ziel_datum - saved_date).days
+        total_days = saved_weeks * 7 + saved_days + diff
+        wochen = total_days // 7
+        tage = total_days % 7
+
+        st.success(f"🟢 Die Hennen sind am {ziel_datum.strftime('%d.%m.%Y')} **{wochen} Wochen und {tage} Tage alt.**")
+    else:
+        st.warning("⚠️ Das gewählte Datum liegt vor dem Einstall-Datum.")
+
+    st.markdown("---")
+    st.subheader("📆 Datum zu bestimmtem Alter berechnen")
+    ziel_wochen = st.number_input("Zielalter (Wochen)", min_value=0, step=1, value=0, key="ziel_wochen")
+    ziel_tage = st.number_input("Zielalter (Tage)", min_value=0, max_value=6, step=1, value=0, key="ziel_tage")
+
     if st.button("📆 Datum berechnen"):
-        stall_daten = st.session_state["staelle"][ausgewaehlter_stall]
-        startdatum = stall_daten["datum"] - timedelta(weeks=stall_daten["wochen"], days=stall_daten["tage"])
-        ziel_datum2 = startdatum + timedelta(weeks=ziel_alter_wochen)
-        st.success(f"Die Hennen sind am **{ziel_datum2.strftime('%d.%m.%Y')}** genau **{ziel_alter_wochen} Wochen** alt.")
+        tage_fuer_wochen = ziel_wochen * 7 + ziel_tage
+        bisherige_tage = saved_weeks * 7 + saved_days
+        diff_tage = tage_fuer_wochen - bisherige_tage
+
+        if diff_tage >= 0:
+            neues_datum = saved_date + timedelta(days=diff_tage)
+            st.success(f"🟢 Die Hennen sind am **{neues_datum.strftime('%d.%m.%Y')}** genau {ziel_wochen} Wochen und {ziel_tage} Tage alt.")
+        else:
+            st.warning("⚠️ Zielalter liegt vor dem Einstallalter.")
 
 else:
-    st.info("➕ Lege zuerst einen Stall über die Seitenleiste an.")
+    st.info("ℹ️ Bitte zuerst einen Stall anlegen oder auswählen.")
+ 
