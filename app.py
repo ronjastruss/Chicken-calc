@@ -8,11 +8,11 @@ if "staelle" not in st.session_state:
     st.session_state["staelle"] = {}
 if "aktueller_stall" not in st.session_state:
     st.session_state["aktueller_stall"] = None
+if "stall_name" not in st.session_state:
+    st.session_state["stall_name"] = ""
 
 # 🐣 Sidebar: Stall erstellen
 st.sidebar.header("🔧 Neuen Stall anlegen")
-if "stall_name" not in st.session_state:
-    st.session_state["stall_name"] = ""
 stall_name = st.sidebar.text_input("Stallname", value=st.session_state["stall_name"], placeholder="z. B. Hühnerstall 1")
 einstall_datum = st.sidebar.date_input("Einstall-Datum")
 einstall_wochen = st.sidebar.number_input("Alter bei Einstallung (Wochen)", min_value=0, step=1)
@@ -26,8 +26,7 @@ if st.sidebar.button("💾 Stall speichern"):
             "tage": int(einstall_tage)
         }
         st.session_state["aktueller_stall"] = stall_name
-        # Felder zurücksetzen (ohne rerun)
-        st.session_state["stall_name"] = ""
+        st.session_state["stall_name"] = ""  # Eingabe zurücksetzen
     else:
         st.sidebar.error("Bitte alle Felder ausfüllen!")
 
@@ -41,7 +40,6 @@ if st.session_state["staelle"]:
     if st.sidebar.button("❌ Stall löschen"):
         del st.session_state["staelle"][auswahl]
         st.session_state["aktueller_stall"] = None
-        st.experimental_set_query_params()  # Optional zum Aufräumen
         st.stop()
 
 # 📋 Hauptinhalt
