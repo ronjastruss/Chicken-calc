@@ -1,9 +1,9 @@
 import streamlit as st
 from datetime import date, datetime, timedelta
 
-st.set_page_config(page_title="Hennen-Altersrechner", layout="centered")
+st.set_page_config(page_title="Chicken-Calculator", layout="centered")
 
-st.title("🐔 Hennen-Altersrechner")
+st.title("🐔 Chicken Calculator")
 
 # SessionState initialisieren
 if "ställe" not in st.session_state:
