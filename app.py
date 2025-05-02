@@ -1,12 +1,12 @@
 import streamlit as st
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Hühner Altersrechner", layout="centered")
+st.set_page_config(page_title="Chicken Calculator", layout="centered")
 
 # Hinweis für mobile Nutzer
 st.info("📱 Auf dem Smartphone? Tippe oben links auf das ☰ Menü, um einen Stall hinzuzufügen.")
 
-st.title("🐔 Hühner Altersrechner")
+st.title("🐔 Chicken Calculator")
 
 # Session State initialisieren
 if "ställe" not in st.session_state:
